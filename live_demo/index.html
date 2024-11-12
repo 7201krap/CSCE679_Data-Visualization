@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Token Uncertainty Visualizer</title>
+    <style>
+        /* Gradient background */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(to bottom, #ffffff, #dddddd);
+        }
+
+        /* Container to center the content */
+        #container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 90%;
+            max-width: 800px;
+            margin: auto;
+        }
+
+        /* Area to hold past outputs */
+        #output-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-y: auto;
+            max-height: 50vh;
+            width: 100%;
+            padding: 10px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.5);
+            margin-bottom: 10px;
+        }
+
+        /* Output text styling */
+        .output-item {
+            font-size: 20px;
+            line-height: 1.5;
+            max-width: 100%;
+            word-wrap: break-word;
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, rgba(200, 200, 200, 0.3), rgba(180, 180, 180, 0.3));
+            animation: backgroundShift 5s ease-in-out infinite alternate;
+        }
+
+        /* Keyframes for animated background */
+        @keyframes backgroundShift {
+            0% { background: linear-gradient(135deg, rgba(200, 200, 200, 0.3), rgba(180, 180, 180, 0.3)); }
+            50% { background: linear-gradient(135deg, rgba(180, 180, 180, 0.3), rgba(160, 160, 160, 0.3)); }
+            100% { background: linear-gradient(135deg, rgba(200, 200, 200, 0.3), rgba(180, 180, 180, 0.3)); }
+        }
+
+        /* Controls styling */
+        #controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            width: 100%;
+        }
+
+        /* Control sections */
+        #left-control, #center-control, #right-control {
+            margin: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Text input box styling */
+        #text-input {
+            width: 300px;
+            height: 100px;
+            resize: none;
+            border-radius: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+
+        /* Label and select styling */
+        label {
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        select {
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+
+        /* Submit button styling */
+        #submit-btn {
+            margin-top: 20px;
+            padding: 12px 24px;
+            font-size: 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+            transition: background-color 0.3s;
+        }
+
+        /* Button hover effect */
+        #submit-btn:hover {
+            background-color: #45a049;
+        }
+
+        /* Fade-in animation */
+        .fade-in {
+            opacity: 0;
+            animation: fadeIn 1s forwards;
+        }
+
+        /* Keyframes for fade-in */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <!-- Container for previous outputs -->
+        <div id="output-container">
+            <!-- New prompt will be appended to the bottom of this content -->
+        </div>
+
+        <!-- Controls container -->
+        <div id="controls">
+            <!-- Model selection -->
+            <div id="left-control">
+                <label for="model-select">Model Type:</label>
+                <select id="model-select">
+                    <option value="small">Small</option>
+                    <option value="base">Base</option>
+                </select>
+            </div>
+
+            <!-- Text input -->
+            <div id="center-control">
+                <label for="text-input">Your Text:</label>
+                <textarea id="text-input" placeholder="Enter your text here"></textarea>
+            </div>
+
+            <!-- Language selection -->
+            <div id="right-control">
+                <label for="language-select">Language:</label>
+                <select id="language-select">
+                    <option value="German">German</option>
+                    <option value="French">French</option>
+                    <option value="Romanian">Romanian</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Submit button -->
+        <button id="submit-btn">Submit</button>
+    </div>
+
+    <!-- JavaScript for functionality -->
+    <script>
+        document.getElementById('submit-btn').addEventListener('click', function() {
+            var text = document.getElementById('text-input').value;
+            var model = document.getElementById('model-select').value;
+            var language = document.getElementById('language-select').value;
+
+            var params = new URLSearchParams({ text: text, model: model, language: language });
+
+            fetch('/api/analyze?' + params.toString())
+                .then(response => response.json())
+                .then(data => displayTokens(data))
+                .catch(error => console.error('Error:', error));
+        });
+
+        function lerp(a, b, t) {
+            return a + (b - a) * t;
+        }
+
+        function displayTokens(response) {
+            var outputContainer = document.getElementById('output-container');
+            var newOutput = document.createElement('div');
+            newOutput.className = 'output-item fade-in';
+
+            // Build the output for each token with uncertainties
+            response.tokens.forEach((token, index) => {
+                var span = document.createElement('span');
+                span.textContent = token + ' ';
+
+                var uncertainty = response.uq[index];
+                span.title = `Uncertainty: ${uncertainty.toFixed(2)}`;
+                
+                var red = lerp(0, 255, uncertainty);
+                var green = lerp(0, 0, uncertainty);
+                var blue = lerp(0, 255, 1 - uncertainty);
+                
+                span.style.color = `rgb(${Math.round(red)}, ${Math.round(green)}, ${Math.round(blue)})`;
+                newOutput.appendChild(span);
+            });
+
+            // Append the new output at the bottom of the container
+            outputContainer.appendChild(newOutput);
+            outputContainer.scrollTop = outputContainer.scrollHeight; // Scroll to the bottom
+        }
+    </script>
+</body>
+</html>
+
