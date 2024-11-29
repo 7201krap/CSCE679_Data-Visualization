@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="UTF-8">
     <title>Token Uncertainty Visualizer</title>
@@ -8,11 +9,17 @@
         body {
             font-family: Arial, sans-serif;
             margin: 0;
-            height: 100vh;
+            height: 100%;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            background: linear-gradient(to bottom, #ffffff, #dddddd);
+            background: linear-gradient(to bottom, #faf9f9, #ffd6ba);
+            background-size: cover;
+            /* Ensures the background stretches to cover the page */
+            background-repeat: no-repeat;
+            /* Prevents the background from repeating */
+            background-attachment: fixed;
+            /* Makes the background stay in place during scrolling */
         }
 
         /* Container to center the content */
@@ -25,39 +32,58 @@
             margin: auto;
         }
 
-        /* Area to hold past outputs */
+        /* Area to display output */
         #output-container {
             display: flex;
-            flex-direction: column;
+            justify-content: center;
             align-items: center;
-            overflow-y: auto;
-            max-height: 50vh;
+            height: auto;
             width: 100%;
-            padding: 10px;
-            border-radius: 10px;
-            background: rgba(255, 255, 255, 0.5);
-            margin-bottom: 10px;
+            margin-bottom: 20px;
         }
 
-        /* Output text styling */
-        .output-item {
-            font-size: 20px;
+        /* Floating card for output */
+        #controls-container {
+            font-size: 16px;
             line-height: 1.5;
-            max-width: 100%;
+            max-width: 90%;
             word-wrap: break-word;
             text-align: center;
             padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 10px;
-            background: linear-gradient(135deg, rgba(200, 200, 200, 0.3), rgba(180, 180, 180, 0.3));
-            animation: backgroundShift 5s ease-in-out infinite alternate;
+            border-radius: 15px;
+            background-color: #ffffff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
 
-        /* Keyframes for animated background */
-        @keyframes backgroundShift {
-            0% { background: linear-gradient(135deg, rgba(200, 200, 200, 0.3), rgba(180, 180, 180, 0.3)); }
-            50% { background: linear-gradient(135deg, rgba(180, 180, 180, 0.3), rgba(160, 160, 160, 0.3)); }
-            100% { background: linear-gradient(135deg, rgba(200, 200, 200, 0.3), rgba(180, 180, 180, 0.3)); }
+        /* Floating card for output */
+        #output {
+            font-size: 36px;
+            line-height: 1.5;
+            max-width: 90%;
+            word-wrap: break-word;
+            text-align: center;
+            padding: 20px;
+            border-radius: 15px;
+            background-color: #ffffff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* Hover effect for floating box */
+        .card:hover,
+        #output:hover,
+        #controls-container:hover {
+            transition: transform 0.3s transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Styling the controls container */
+        #controls-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
         }
 
         /* Controls styling */
@@ -65,13 +91,14 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            margin-bottom: 20px;
             flex-wrap: wrap;
             width: 100%;
         }
 
         /* Control sections */
-        #left-control, #center-control, #right-control {
+        #left-control,
+        #center-control,
+        #right-control {
             margin: 10px;
             display: flex;
             flex-direction: column;
@@ -86,7 +113,7 @@
             border-radius: 10px;
             padding: 10px;
             border: 1px solid #ccc;
-            font-size: 16px;
+            font-size: 18px;
         }
 
         /* Label and select styling */
@@ -128,58 +155,185 @@
 
         /* Keyframes for fade-in */
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Divider styling */
+        .divider {
+            width: 100%;
+            height: 2px;
+            background-color: #cccccc;
+            margin: 20px 0;
+        }
+
+        /* Card styling */
+        .card {
+            width: 90%;
+            max-width: 800px;
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .card h2 {
+            margin-top: 0;
+        }
+
+        .card .card-body {
+            color: #333333;
+        }
+
+        /* Title card styling */
+        #title-card {
+            width: 90%;
+            max-width: 800px;
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            margin-top: 5vh;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        #title-card h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        /* Token style */
+        .token {
+            display: inline-block;
+            padding: 5px 10px;
+            margin: 2px;
+            border-radius: 10px;
+            color: #000000;
+            /* Fallback text color for readability */
+            transition: background-color 0.3s, color 0.3s;
+            /* Smooth color transitions */
         }
     </style>
 </head>
+
 <body>
+    <!-- Title Card -->
+    <div id="title-card">
+        <h1>VISUALIZING UNCERTAINTY IN TRANSLATION TASKS: AN EVALUATION OF LLM PERFORMANCE AND CONFIDENCE METRICS</h1>
+    </div>
+
     <div id="container">
-        <!-- Container for previous outputs -->
+        <!-- Container for displaying output -->
         <div id="output-container">
-            <!-- New prompt will be appended to the bottom of this content -->
+            <div id="output"></div>
         </div>
 
         <!-- Controls container -->
-        <div id="controls">
-            <!-- Model selection -->
-            <div id="left-control">
-                <label for="model-select">Model Type:</label>
-                <select id="model-select">
-                    <option value="small">Small</option>
-                    <option value="base">Base</option>
-                </select>
+        <div id="controls-container">
+            <div id="controls">
+                <!-- Model selection -->
+                <div id="left-control">
+                    <label for="model-select">Model Type:</label>
+                    <select id="model-select">
+                        <option value="small">Small</option>
+                        <option value="base">Base</option>
+                    </select>
+                </div>
+
+                <!-- Text input -->
+                <div id="center-control">
+                    <label for="text-input">Your Text:</label>
+                    <textarea id="text-input" placeholder="Enter your text here"></textarea>
+                </div>
+
+                <!-- Language selection -->
+                <div id="right-control">
+                    <label for="language-select">Language:</label>
+                    <select id="language-select">
+                        <option value="German">German</option>
+                        <option value="French">French</option>
+                        <option value="Romanian">Romanian</option>
+                    </select>
+                </div>
             </div>
 
-            <!-- Text input -->
-            <div id="center-control">
-                <label for="text-input">Your Text:</label>
-                <textarea id="text-input" placeholder="Enter your text here"></textarea>
-            </div>
+            <!-- Submit button -->
+            <button id="submit-btn">Submit</button>
+        </div>
 
-            <!-- Language selection -->
-            <div id="right-control">
-                <label for="language-select">Language:</label>
-                <select id="language-select">
-                    <option value="German">German</option>
-                    <option value="French">French</option>
-                    <option value="Romanian">Romanian</option>
-                </select>
+        <!-- Cards section -->
+        <div class="card">
+            <h2>Abstract</h2>
+            <div class="card-body">
+                Large language models (LLMs) are increasingly
+                utilized for machine translation, yet their predictions often exhibit uncertainties that hinder inter-
+                pretability and user trust. Effectively visualizing these uncertainties can enhance the usability of
+                LLM outputs, particularly in contexts where translation accuracy is critical. This paper addresses
+                two primary objectives: (1) providing users with token-level insights into model confidence and (2)
+                developing a web-based visualization tool to quantify and represent translation uncertainties. To
+                achieve these goals, we utilized the T5 model with the WMT19 dataset for translation tasks and
+                evaluated translation quality using established metrics such as BLEU, METEOR, and ROUGE. We
+                introduced three novel uncertainty quantification (UQ) metrics: (1) the geometric mean of token
+                probabilities, (2) the arithmetic mean of token probabilities, and (3) the arithmetic mean of the
+                kurtosis of token distributions. These metrics provide a simple yet effective framework for evaluating
+                translation performance. Our analysis revealed a linear relationship between the traditional evaluation
+                metrics and our UQ metrics, demonstrating the validity of our approach. Additionally, we developed
+                an interactive web-based visualization that uses a color gradient to represent token confidence. This
+                tool offers users a clear and intuitive understanding of translation quality while providing valuable
+                insights into model performance. Overall, we show that our UQ metrics and visualization are both
+                robust and interpretable, offering practical tools for evaluating and accessing machine translation
+                systems.
             </div>
         </div>
 
-        <!-- Submit button -->
-        <button id="submit-btn">Submit</button>
+        <div class="card">
+            <h2>Uncertainty Quantification (UQ) Metric</h2>
+            <div class="card-body">
+                <p>
+                    We introduce Uncertainty Quantification (UQ) metrics to evaluate token-level confidence in
+                    translations produced by models like T5 small, base, and large. These metrics leverage token
+                    probability matrices, enabling a probabilistic analysis of translation reliability.
+                </p>
+                <p>
+                    The UQ metrics are based on three key measures:
+                </p>
+                <ol>
+                    <li>
+                        <strong>Geometric Mean (GM) of Token Probabilities</strong>: Aggregates token probabilities
+                        multiplicatively to emphasize lower probabilities, reflecting a conservative confidence score.
+                    </li>
+                    <li>
+                        <strong>Arithmetic Mean (AM) of Token Probabilities</strong>: Provides an additive aggregation
+                        for an average confidence score, treating each token equally.
+                    </li>
+                    <li>
+                        <strong>Arithmetic Mean of Scaled Kurtosis (KW-AM)</strong>: Captures higher-order statistical
+                        moments by computing kurtosis on the top <code>k</code> probabilities for each token,
+                        emphasizing peakedness and tail weight of distributions.
+                    </li>
+                </ol>
+            </div>
+        </div>
     </div>
 
     <!-- JavaScript for functionality -->
     <script>
-        document.getElementById('submit-btn').addEventListener('click', function() {
+
+        document.getElementById('submit-btn').addEventListener('click', function () {
             var text = document.getElementById('text-input').value;
             var model = document.getElementById('model-select').value;
             var language = document.getElementById('language-select').value;
 
-            var params = new URLSearchParams({ text: text, model: model, language: language });
+            var params = new URLSearchParams({text: text, model: model, language: language});
 
             fetch('/api/analyze?' + params.toString())
                 .then(response => response.json())
@@ -192,31 +346,51 @@
         }
 
         function displayTokens(response) {
-            var outputContainer = document.getElementById('output-container');
-            var newOutput = document.createElement('div');
-            newOutput.className = 'output-item fade-in';
+            var outputContainer = document.getElementById('output');
+            outputContainer.innerHTML = ''; // Clear previous output
 
-            // Build the output for each token with uncertainties
+            // Display tokens with uncertainty
             response.tokens.forEach((token, index) => {
                 var span = document.createElement('span');
                 span.textContent = token + ' ';
+                span.className = 'token';
 
                 var uncertainty = response.uq[index];
                 span.title = `Uncertainty: ${uncertainty.toFixed(2)}`;
-                
+
+                // Define colors for text and background
                 var red = lerp(0, 255, uncertainty);
                 var green = lerp(0, 0, uncertainty);
                 var blue = lerp(0, 255, 1 - uncertainty);
-                
-                span.style.color = `rgb(${Math.round(red)}, ${Math.round(green)}, ${Math.round(blue)})`;
-                newOutput.appendChild(span);
+
+                var textColor = `rgb(${Math.round(red)}, ${Math.round(green)}, ${Math.round(blue)})`;
+                var backgroundColor = `rgba(${Math.round(red)}, ${Math.round(green)}, ${Math.round(blue)}, 0.2)`;
+
+                // Apply styles
+                span.style.color = textColor;
+                span.style.backgroundColor = backgroundColor;
+
+                outputContainer.appendChild(span);
             });
 
-            // Append the new output at the bottom of the container
-            outputContainer.appendChild(newOutput);
-            outputContainer.scrollTop = outputContainer.scrollHeight; // Scroll to the bottom
+            // Display scores
+            var scoresContainer = document.createElement('div');
+            scoresContainer.style = "font-size: 24px";
+            var scoresList = document.createElement('ul');
+            scoresList.style = "list-style-type:none;";
+
+            for (const [scoreName, scoreValue] of Object.entries(response.scores)) {
+                var listItem = document.createElement('li');
+                listItem.textContent = `${scoreName}: ${scoreValue.toFixed(2)}`;
+                scoresList.appendChild(listItem);
+            }
+
+            scoresContainer.appendChild(scoresList);
+            outputContainer.appendChild(scoresContainer);
         }
+
+
     </script>
 </body>
-</html>
 
+</html>
