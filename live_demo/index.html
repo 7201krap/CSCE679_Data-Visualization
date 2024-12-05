@@ -42,6 +42,34 @@
             margin-bottom: 20px;
         }
 
+        #color-bar-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        #color-bar {
+            width: 100%;
+            max-width: 600px;
+            height: 30px;
+            background: linear-gradient(to right, #003f5c, #58508d, #bc5090, #ff6361, #ffa600);
+            border-radius: 10px;
+            position: relative;
+            margin-top: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .color-bar-label {
+            position: absolute;
+            top: 35px; /* Position labels below the bar */
+            font-size: 12px;
+            font-weight: bold;
+            color: #000;
+            transform: translateX(-50%);
+        }
+
         /* Floating card for output */
         #controls-container {
             font-size: 16px;
@@ -50,6 +78,7 @@
             word-wrap: break-word;
             text-align: center;
             padding: 20px;
+            margin-top: 4vh;
             border-radius: 15px;
             background-color: #ffffff;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
@@ -236,6 +265,9 @@
         <div id="output-container">
             <div id="output"></div>
         </div>
+        <div id="color-bar-container">
+            <div id="color-bar"></div>
+        </div>
 
         <!-- Controls container -->
         <div id="controls-container">
@@ -328,66 +360,123 @@
     <!-- JavaScript for functionality -->
     <script>
 
-        document.getElementById('submit-btn').addEventListener('click', function () {
-            var text = document.getElementById('text-input').value;
-            var model = document.getElementById('model-select').value;
-            var language = document.getElementById('language-select').value;
 
-            var params = new URLSearchParams({text: text, model: model, language: language});
+    const colorBar = document.getElementById('color-bar');
+    colorBar.innerHTML = ''; // Clear any previous content
 
-            fetch('/api/analyze?' + params.toString())
-                .then(response => response.json())
-                .then(data => displayTokens(data))
-                .catch(error => console.error('Error:', error));
+    // Define the thresholds and their positions
+    const thresholds = [0, 0.25, 0.5, 0.75, 1];
+    const colors = ['#003f5c', '#58508d', '#bc5090', '#ff6361', '#ffa600'];
+
+    // Add labels for each threshold
+    thresholds.forEach((value, index) => {
+        const label = document.createElement('div');
+        label.textContent = value.toFixed(2);
+        label.className = 'color-bar-label';
+
+        // Calculate label position
+        label.style.left = `${(index / (thresholds.length - 1)) * 100}%`;
+
+        colorBar.appendChild(label);
+    });
+
+    // Call the function after creating the tokens
+    document.getElementById('submit-btn').addEventListener('click', function () {
+        var text = document.getElementById('text-input').value;
+        var model = document.getElementById('model-select').value;
+        var language = document.getElementById('language-select').value;
+
+        var params = new URLSearchParams({ text: text, model: model, language: language });
+
+        fetch('/api/analyze?' + params.toString())
+            .then(response => response.json())
+            .then(data => {
+                displayTokens(data);
+                createColorBar(); // Update the color bar
+            })
+            .catch(error => console.error('Error:', error));
+    });
+
+    function getColorByUncertainty(uncertainty) {
+        // Define color gradient stops
+        const colors = ['#003f5c', '#58508d', '#bc5090', '#ff6361', '#ffa600'];
+        const thresholds = [0, 0.25, 0.5, 0.75, 1]; // Define thresholds for mapping
+
+        // Map uncertainty to the color gradient
+        for (let i = 0; i < thresholds.length - 1; i++) {
+            if (uncertainty >= thresholds[i] && uncertainty < thresholds[i + 1]) {
+                // Interpolate between two colors
+                const t = (uncertainty - thresholds[i]) / (thresholds[i + 1] - thresholds[i]);
+                return interpolateColor(colors[i], colors[i + 1], t);
+            }
+        }
+        return colors[colors.length - 1]; // Return the last color for edge cases
+    }
+
+    function interpolateColor(color1, color2, t) {
+        // Parse colors to RGB
+        const parseRGB = (color) => color.match(/\w\w/g).map((c) => parseInt(c, 16));
+        const [r1, g1, b1] = parseRGB(color1);
+        const [r2, g2, b2] = parseRGB(color2);
+
+        // Interpolate each channel
+        const r = Math.round(r1 + (r2 - r1) * t);
+        const g = Math.round(g1 + (g2 - g1) * t);
+        const b = Math.round(b1 + (b2 - b1) * t);
+
+        return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    function rgba(color, alpha) {
+        // Convert an RGB string into RGBA with the given alpha
+        const match = color.match(/rgb\((\d+), (\d+), (\d+)\)/);
+        if (match) {
+            const [, r, g, b] = match;
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+        return color; // Fallback in case of unexpected input
+    }
+
+    function displayTokens(response) {
+        var outputContainer = document.getElementById('output');
+        outputContainer.innerHTML = ''; // Clear previous output
+
+        // Display tokens with uncertainty
+        response.tokens.forEach((token, index) => {
+            var span = document.createElement('span');
+            span.textContent = token + ' ';
+            span.className = 'token';
+
+            var uncertainty = response.uq[index];
+            span.title = `Uncertainty: ${uncertainty.toFixed(2)}`;
+
+            // Get color by uncertainty
+            var textColor = getColorByUncertainty(uncertainty);
+            var backgroundColor = rgba(textColor, 0.2); // Create a semi-transparent background
+
+            // Apply styles
+            span.style.color = textColor;
+            span.style.backgroundColor = backgroundColor;
+
+            outputContainer.appendChild(span);
         });
 
-        function lerp(a, b, t) {
-            return a + (b - a) * t;
+        // Display scores
+        var scoresContainer = document.createElement('div');
+        scoresContainer.style = "font-size: 24px";
+        var scoresList = document.createElement('ul');
+        scoresList.style = "list-style-type:none;";
+
+        for (const [scoreName, scoreValue] of Object.entries(response.scores)) {
+            var listItem = document.createElement('li');
+            listItem.textContent = `${scoreName}: ${scoreValue.toFixed(2)}`;
+            scoresList.appendChild(listItem);
         }
 
-        function displayTokens(response) {
-            var outputContainer = document.getElementById('output');
-            outputContainer.innerHTML = ''; // Clear previous output
+        scoresContainer.appendChild(scoresList);
+        outputContainer.appendChild(scoresContainer);
+    }
 
-            // Display tokens with uncertainty
-            response.tokens.forEach((token, index) => {
-                var span = document.createElement('span');
-                span.textContent = token + ' ';
-                span.className = 'token';
-
-                var uncertainty = response.uq[index];
-                span.title = `Uncertainty: ${uncertainty.toFixed(2)}`;
-
-                // Define colors for text and background
-                var red = lerp(0, 255, uncertainty);
-                var green = lerp(0, 0, uncertainty);
-                var blue = lerp(0, 255, 1 - uncertainty);
-
-                var textColor = `rgb(${Math.round(red)}, ${Math.round(green)}, ${Math.round(blue)})`;
-                var backgroundColor = `rgba(${Math.round(red)}, ${Math.round(green)}, ${Math.round(blue)}, 0.2)`;
-
-                // Apply styles
-                span.style.color = textColor;
-                span.style.backgroundColor = backgroundColor;
-
-                outputContainer.appendChild(span);
-            });
-
-            // Display scores
-            var scoresContainer = document.createElement('div');
-            scoresContainer.style = "font-size: 24px";
-            var scoresList = document.createElement('ul');
-            scoresList.style = "list-style-type:none;";
-
-            for (const [scoreName, scoreValue] of Object.entries(response.scores)) {
-                var listItem = document.createElement('li');
-                listItem.textContent = `${scoreName}: ${scoreValue.toFixed(2)}`;
-                scoresList.appendChild(listItem);
-            }
-
-            scoresContainer.appendChild(scoresList);
-            outputContainer.appendChild(scoresContainer);
-        }
 
 
     </script>
